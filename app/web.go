@@ -73,11 +73,23 @@ func ServeAssets(w http.ResponseWriter, req *http.Request) {
 // ServeIndex : Serves index page on GET request
 func ServeIndex(w http.ResponseWriter, req *http.Request) {
 	p := &pageData{Title: getTitle(), CaptchaId: captcha.New(), Pattern: getPattern(), PatternInfo: getPatternInfo()}
-	t, e := template.ParseFiles(path.Join("templates", "index.html"))
-	if e != nil {
-		log.Printf("Error parsing file %v\n", e)
+	index, err := template.ParseFiles(path.Join("templates", "index.html"))
+	if err != nil {
+		log.Printf("Error parsing file %v\n", err)
 	} else {
-		t.Execute(w, p)
+		index.Execute(w, p)
+	}
+	main, err := template.ParseFiles(path.Join("templates", "main.html"))
+	if err != nil {
+		log.Printf("Error parsing file %v\n", err)
+	} else {
+		main.Execute(w, p)
+	}
+	afterMain, err := template.ParseFiles(path.Join("templates", "after-main.html"))
+	if err != nil {
+		log.Printf("Error parsing file %v\n", err)
+	} else {
+		afterMain.Execute(w, p)
 	}
 }
 
@@ -130,10 +142,10 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 
 	p := &pageData{Title: getTitle(), Alerts: alerts, Username: cp.Username, CaptchaId: captcha.New()}
 
-	t, e := template.ParseFiles(path.Join("templates", "index.html"))
-	if e != nil {
-		log.Printf("Error parsing file %v\n", e)
+	main, err := template.ParseFiles(path.Join("templates", "main.html"))
+	if err != nil {
+		log.Printf("Error parsing file %v\n", err)
 	} else {
-		t.Execute(w, p)
+		main.Execute(w, p)
 	}
 }

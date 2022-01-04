@@ -17,45 +17,15 @@
         var xhr = new XMLHttpRequest();
         xhr.onreadystatechange = function() {
             if (xhr.readyState == XMLHttpRequest.DONE) {
-                document.getElementById('output').innerHTML = xhr.responseText;
+                document.getElementById('main').innerHTML = xhr.responseText;
             }
         }
         xhr.open("POST", "http://localhost:8443", true);
         xhr.setRequestHeader('Content-Type', 'application/json');
         let body = JSON.stringify(Object.fromEntries(new FormData(document.querySelector('form')).entries()));
-        console.log(body)
         xhr.send(body);
         event.preventDefault();
         return false;
     }
 </script>
-<main>
-    <h1>{{.Title}}</h1>
-    <div class="alerts">
-        {{ range $key, $value := .Alerts }}
-        <div class="alert {{ $key }}">{{ $value }}</div>
-        {{ end }}
-    </div>
-
-    <form id="form" onsubmit="submitx(event)">
-        <label for="username">Username</label>
-        <input id="username" name="username" value="{{.Username}}" type="text" required autofocus>
-
-        <label for="old-password">Old password</label>
-        <input id="old-password" name="oldPassword" type="password" required>
-
-        <label for="new-password">New password</label>
-        <input id="new-password" name="newPassword" type="password"
-               pattern="{{.Pattern}}" x-moz-errormessage="{{.PatternInfo}}" required>
-
-        <label for="confirm-password">Confirm new password</label>
-        <input id="confirm-password" name="confirmPassword" type="password"
-               pattern="{{.Pattern}}" x-moz-errormessage="{{.PatternInfo}}" required>
-        <p>{{.PatternInfo}}</p>
-        <button type="submit">Update password</button>
-    </form>
-
-
-</main>
-</body>
-</html>
+<main id="main">
