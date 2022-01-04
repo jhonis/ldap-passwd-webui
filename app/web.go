@@ -116,8 +116,8 @@ func ChangePassword(w http.ResponseWriter, req *http.Request) {
 	//}
 
 	if len(alerts) == 0 {
-		args := fmt.Sprintf(`-Identity %s -OldPassword (ConvertTo-SecureString -AsPlainText "%s" -Force) -NewPassword (ConvertTo-SecureString -AsPlainText "%s" -Force)`, un, oldPassword, newPassword)
-		out, err := exec.Command("Set-ADAccountPassword", strings.Split(args, " ")...).Output()
+		args := fmt.Sprintf(`-nologo -noprofile Set-ADAccountPassword -Identity %s -OldPassword (ConvertTo-SecureString -AsPlainText "%s" -Force) -NewPassword (ConvertTo-SecureString -AsPlainText "%s" -Force)`, un, oldPassword, newPassword)
+		out, err := exec.Command("powershell", strings.Split(args, " ")...).Output()
 		if err != nil {
 			log.Fatal(err)
 		}
