@@ -25,6 +25,7 @@
         let body = JSON.stringify(Object.fromEntries(new FormData(document.querySelector('form')).entries()));
         console.log(body)
         xhr.send(body);
+        return false;
     }
 </script>
 <main>
