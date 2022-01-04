@@ -121,7 +121,8 @@ func ChangePassword(w http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(out)
+		fmt.Println(string(out))
+		fmt.Println(fmt.Sprintf("Password has been changed successfully for %s", un))
 	}
 
 	p := &pageData{Title: getTitle(), Alerts: alerts, Username: un, CaptchaId: captcha.New()}
