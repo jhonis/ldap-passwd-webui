@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os/exec"
@@ -57,6 +58,13 @@ type pageData struct {
 	CaptchaId   string
 }
 
+type ChangePasswordRequest struct {
+	Username        string `json:"username"`
+	OldPassword     string `json:"oldPassword"`
+	NewPassword     string `json:"newPassword"`
+	ConfirmPassword string `json:"confirmPassword"`
+}
+
 // ServeAssets : Serves the static assets
 func ServeAssets(w http.ResponseWriter, req *http.Request) {
 	http.ServeFile(w, req, path.Join("static", req.URL.Path[1:]))
@@ -74,38 +82,38 @@ func ServeIndex(w http.ResponseWriter, req *http.Request) {
 }
 
 // ChangePassword : Serves index page on POST request - executes the change
-func ChangePassword(w http.ResponseWriter, req *http.Request) {
-	req.ParseForm()
-	un := ""
-	username := req.Form["username"]
-	oldPassword := req.Form["old-password"]
-	newPassword := req.Form["new-password"]
-	confirmPassword := req.Form["confirm-password"]
+func ChangePassword(w http.ResponseWriter, r *http.Request) {
+	var cp ChangePasswordRequest
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+
+	err := dec.Decode(&cp)
+	if err != nil {
+		log.Fatal(err)
+	}
 	//captchaID := req.Form["captchaId"]
 	//captchaSolution := req.Form["captchaSolution"]
 
 	alerts := map[string]string{}
 
-	if len(username) < 1 || username[0] == "" {
+	if cp.Username == "" {
 		alerts["error"] = "Username not specified."
-	} else {
-		un = username[0]
 	}
-	if len(oldPassword) < 1 || oldPassword[0] == "" {
+	if cp.OldPassword == "" {
 		alerts["error"] = alerts["error"] + "Old password not specified."
 	}
-	if len(newPassword) < 1 || newPassword[0] == "" {
+	if cp.NewPassword == "" {
 		alerts["error"] = alerts["error"] + "New password not specified."
 	}
-	if len(confirmPassword) < 1 || confirmPassword[0] == "" {
+	if cp.ConfirmPassword == "" {
 		alerts["error"] = alerts["error"] + "Confirmation password not specified."
 	}
 
-	if len(confirmPassword) >= 1 && len(newPassword) >= 1 && strings.Compare(newPassword[0], confirmPassword[0]) != 0 {
+	if len(cp.ConfirmPassword) >= 1 && len(cp.NewPassword) >= 1 && strings.Compare(cp.NewPassword, cp.ConfirmPassword) != 0 {
 		alerts["error"] = alerts["error"] + "New and confirmation passwords does not match."
 	}
 
-	if m, _ := regexp.MatchString(getPattern(), newPassword[0]); !m {
+	if m, _ := regexp.MatchString(getPattern(), cp.NewPassword); !m {
 		alerts["error"] = alerts["error"] + fmt.Sprintf("%s", getPatternInfo())
 	}
 
@@ -116,16 +124,16 @@ func ChangePassword(w http.ResponseWriter, req *http.Request) {
 	//}
 
 	if len(alerts) == 0 {
-		args := fmt.Sprintf(`-nologo -noprofile Set-ADAccountPassword -Identity %s -OldPassword (ConvertTo-SecureString -AsPlainText "%s" -Force) -NewPassword (ConvertTo-SecureString -AsPlainText "%s" -Force)`, un, oldPassword, newPassword)
+		args := fmt.Sprintf(`-nologo -noprofile Set-ADAccountPassword -Identity %s -OldPassword (ConvertTo-SecureString -AsPlainText "%s" -Force) -NewPassword (ConvertTo-SecureString -AsPlainText "%s" -Force)`, cp.Username, cp.OldPassword, cp.NewPassword)
 		out, err := exec.Command("powershell", strings.Split(args, " ")...).Output()
 		if err != nil {
 			log.Fatal(err)
 		}
 		fmt.Println(string(out))
-		fmt.Println(fmt.Sprintf("Password has been changed successfully for %s", un))
+		fmt.Println(fmt.Sprintf("Password has been changed successfully for %s", cp.Username))
 	}
 
-	p := &pageData{Title: getTitle(), Alerts: alerts, Username: un, CaptchaId: captcha.New()}
+	p := &pageData{Title: getTitle(), Alerts: alerts, Username: cp.Username, CaptchaId: captcha.New()}
 
 	t, e := template.ParseFiles(path.Join("templates", "index.html"))
 	if e != nil {
