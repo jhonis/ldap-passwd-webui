@@ -92,8 +92,6 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 		return
 	}
-	//captchaID := req.Form["captchaId"]
-	//captchaSolution := req.Form["captchaSolution"]
 
 	alerts := map[string]string{}
 
@@ -117,12 +115,6 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 	if m, _ := regexp.MatchString(getPattern(), cp.NewPassword); !m {
 		alerts["error"] = alerts["error"] + fmt.Sprintf("%s", getPatternInfo())
 	}
-
-	//if len(captchaID) < 1 || captchaID[0] == "" ||
-	//	len(captchaSolution) < 1 || captchaSolution[0] == "" ||
-	//	!captcha.VerifyString(captchaID[0], captchaSolution[0]) {
-	//	alerts["error"] = "Wrong captcha."
-	//}
 
 	if len(alerts) == 0 {
 		args := fmt.Sprintf(`-nologo -noprofile Set-ADAccountPassword -Identity %s -OldPassword (ConvertTo-SecureString -AsPlainText "%s" -Force) -NewPassword (ConvertTo-SecureString -AsPlainText "%s" -Force)`, cp.Username, cp.OldPassword, cp.NewPassword)
