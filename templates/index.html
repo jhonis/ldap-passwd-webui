@@ -13,7 +13,7 @@
 
 <body>
 <script>
-    function submitx() {
+    function submitx(event) {
         var xhr = new XMLHttpRequest();
         xhr.onreadystatechange = function() {
             if (xhr.readyState == XMLHttpRequest.DONE) {
@@ -25,6 +25,7 @@
         let body = JSON.stringify(Object.fromEntries(new FormData(document.querySelector('form')).entries()));
         console.log(body)
         xhr.send(body);
+        event.preventDefault();
         return false;
     }
 </script>
@@ -36,7 +37,7 @@
         {{ end }}
     </div>
 
-    <form id="form" onsubmit="submitx()">
+    <form id="form" onsubmit="submitx(event)">
         <label for="username">Username</label>
         <input id="username" name="username" value="{{.Username}}" type="text" required autofocus>
 
