@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
+	"ldap-passwd-webui/app"
 	"net/http"
 
 	"github.com/dchest/captcha"
-	"github.com/thammuio/ldap-passwd-webui/app"
 )
 
 func main() {

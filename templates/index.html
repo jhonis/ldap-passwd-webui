@@ -65,14 +65,14 @@
         <input id="confirm-password" name="confirm-password" type="password"
         pattern="{{.Pattern}}" x-moz-errormessage="{{.PatternInfo}}" required>
         <p>{{.PatternInfo}}</p>
-        <p>Type the numbers you see in the picture below:</p>
-        <p>
-          <img id=image src="/captcha/{{.CaptchaId}}.png" alt="Captcha image">
-        </p>
-        <a href="#" onclick="reload()">Reload</a>
-        <input type=hidden name=captchaId value="{{.CaptchaId}}">
-        <br>
-        <input id="captchaSolution" name="captchaSolution" type="text" required>
+{#        <p>Type the numbers you see in the picture below:</p>#}
+{#        <p>#}
+{#          <img id=image src="/captcha/{{.CaptchaId}}.png" alt="Captcha image">#}
+{#        </p>#}
+{#        <a href="#" onclick="reload()">Reload</a>#}
+{#        <input type=hidden name=captchaId value="{{.CaptchaId}}">#}
+{#        <br>#}
+{#        <input id="captchaSolution" name="captchaSolution" type="text" required>#}
         <button type="submit">Update password</button>
       </form>
 

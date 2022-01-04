@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"log"
+	"os/exec"
 	"path"
 	"strings"
 
@@ -80,8 +81,8 @@ func ChangePassword(w http.ResponseWriter, req *http.Request) {
 	oldPassword := req.Form["old-password"]
 	newPassword := req.Form["new-password"]
 	confirmPassword := req.Form["confirm-password"]
-	captchaID := req.Form["captchaId"]
-	captchaSolution := req.Form["captchaSolution"]
+	//captchaID := req.Form["captchaId"]
+	//captchaSolution := req.Form["captchaSolution"]
 
 	alerts := map[string]string{}
 
@@ -108,21 +109,19 @@ func ChangePassword(w http.ResponseWriter, req *http.Request) {
 		alerts["error"] = alerts["error"] + fmt.Sprintf("%s", getPatternInfo())
 	}
 
-	if len(captchaID) < 1 || captchaID[0] == "" ||
-		len(captchaSolution) < 1 || captchaSolution[0] == "" ||
-		!captcha.VerifyString(captchaID[0], captchaSolution[0]) {
-		alerts["error"] = "Wrong captcha."
-	}
+	//if len(captchaID) < 1 || captchaID[0] == "" ||
+	//	len(captchaSolution) < 1 || captchaSolution[0] == "" ||
+	//	!captcha.VerifyString(captchaID[0], captchaSolution[0]) {
+	//	alerts["error"] = "Wrong captcha."
+	//}
 
 	if len(alerts) == 0 {
-		client := NewLDAPClient()
-		if err := client.ModifyPassword(un, oldPassword[0], newPassword[0]); err != nil {
-			// alerts["error"] = fmt.Sprintf("%v", err)
-			alerts["error"] = fmt.Sprintf("Something Went Wrong!! Not Able to Change your Password because of :  %v", err)
-
-		} else {
-			alerts["success"] = "Password successfuly changed"
+		args := fmt.Sprintf(`-Identity %s -OldPassword (ConvertTo-SecureString -AsPlainText "%s" -Force) -NewPassword (ConvertTo-SecureString -AsPlainText "%s" -Force)`, un, oldPassword, newPassword)
+		out, err := exec.Command("Set-ADAccountPassword", strings.Split(args, " ")...).Output()
+		if err != nil {
+			log.Fatal(err)
 		}
+		fmt.Println(out)
 	}
 
 	p := &pageData{Title: getTitle(), Alerts: alerts, Username: un, CaptchaId: captcha.New()}

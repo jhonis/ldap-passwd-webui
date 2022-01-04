@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"log"
 
-
-	"gopkg.in/ldap.v2"
 	"golang.org/x/text/encoding/unicode"
+	"gopkg.in/ldap.v2"
 )
 
 // SecurityProtocol protocol type
@@ -25,7 +24,7 @@ type LDAPClient struct {
 	Name             string // canonical name (ie. corporate.ad)
 	Host             string // LDAP host
 	Port             int    // port number
-	LDAPType 		 string // AD or LDAP
+	LDAPType         string // AD or LDAP
 	SecurityProtocol SecurityProtocol
 	SkipVerify       bool
 	BindDN           string // Template for the Bind DN
@@ -58,10 +57,9 @@ func (ls *LDAPClient) bindDN(l *ldap.Conn) error {
 	return err
 }
 
-
 func (ls *LDAPClient) bindUserDNAgain(l *ldap.Conn, newUserDN, passwd string) error {
 	log.Printf("\nBinding with userDN: %s", newUserDN)
-	log.Printf("\nBinding with userDN passwd: %s", passwd)
+	//log.Printf("\nBinding with userDN passwd: %s", passwd)
 	err := l.Bind(newUserDN, passwd)
 	if err != nil {
 		log.Printf("\nLDAP auth. failed for %s, reason: %v", newUserDN, err)
@@ -104,7 +102,6 @@ func (ls *LDAPClient) bindUserDNAgain(l *ldap.Conn, newUserDN, passwd string) er
 // 	return fmt.Sprintf(ls.BindDN, username), true
 // }
 
-
 func dial(ls *LDAPClient) (*ldap.Conn, error) {
 	log.Printf("\nDialing LDAP with security protocol (%v) without verifying: %v", ls.SecurityProtocol, ls.SkipVerify)
 
@@ -139,13 +136,11 @@ func (ls *LDAPClient) ModifyPassword(name, passwd, newPassword string) error {
 	log.Printf("\nPort: %s", ls.Port)
 	log.Printf("\nSecurityProtocol: %s", ls.SecurityProtocol)
 	log.Printf("\nSkipVerify: %s", ls.SkipVerify)
-	log.Printf("\nBindDNpass: %s", ls.BindDNpass)
 	log.Printf("\nBindDN: %s", ls.BindDN)
 	log.Printf("\nUserSearchFilter: %s", ls.UserSearchFilter)
 	log.Printf("\nUserDN %s", ls.UserDN)
 	log.Printf("\nUserBase %s", ls.UserBase)
 	log.Printf("\n ====================================")
-
 
 	if len(passwd) == 0 {
 		return fmt.Errorf("Auth. failed for %s, password cannot be empty", name)
@@ -192,73 +187,66 @@ func (ls *LDAPClient) ModifyPassword(name, passwd, newPassword string) error {
 	if len(sr.Entries) != 1 {
 		log.Fatal("User does not exist or too many entries returned")
 	}
-	
+
 	newUserDN := sr.Entries[0].DN
 	log.Printf("\n searched newUserDN: %s", newUserDN)
 
 	// SearchtoGetUserDN(name)
 	// bindUser(l, BindDN, BindDNpass)
 
-    // Bind as the user to verify their password - don't need to bind again
+	// Bind as the user to verify their password - don't need to bind again
 	// bindUserDN(l, newUserDN, passwd)
-
-
-
 
 	log.Printf("\nLDAP will execute password change on: %s", newUserDN)
 
-
 	// flow based on AD/LDAP
 	if ls.LDAPType == "AD" {
-	log.Printf("\nin AD Flow")
-	ls.bindUserDNAgain(l, newUserDN, passwd)
+		log.Printf("\nin AD Flow")
+		ls.bindUserDNAgain(l, newUserDN, passwd)
 
-    utf16 := unicode.UTF16(unicode.LittleEndian, unicode.IgnoreBOM)
-	// According to the MS docs in the links above https://github.com/go-ldap/ldap/issues/106
-	// The password needs to be enclosed in quotes
-	// pwdEncoded, _ := utf16.NewEncoder().String("\"testpassword\"")
+		utf16 := unicode.UTF16(unicode.LittleEndian, unicode.IgnoreBOM)
+		// According to the MS docs in the links above https://github.com/go-ldap/ldap/issues/106
+		// The password needs to be enclosed in quotes
+		// pwdEncoded, _ := utf16.NewEncoder().String("\"testpassword\"")
 
-	newPasswordEncoded, _ := utf16.NewEncoder().String(newPassword)
+		newPasswordEncoded, _ := utf16.NewEncoder().String(newPassword)
 
-	log.Printf("\nEncoded newPassword : %s", newPasswordEncoded)
+		//log.Printf("\nEncoded newPassword : %s", newPasswordEncoded)
 
-	passReq := &ldap.ModifyRequest{
-	DN: newUserDN, // DN for the user we're resetting
-	ReplaceAttributes: []ldap.PartialAttribute{
-		{"unicodePwd", []string{newPasswordEncoded}},
-	},
-	}
-	err = l.Modify(passReq)
+		passReq := &ldap.ModifyRequest{
+			DN: newUserDN, // DN for the user we're resetting
+			ReplaceAttributes: []ldap.PartialAttribute{
+				{"unicodePwd", []string{newPasswordEncoded}},
+			},
+		}
+		err = l.Modify(passReq)
 
-	if err != nil {
-		log.Printf("\n Not able to Change Password for user %s, reason: %v", newUserDN, err)
-	}
-	return err
+		if err != nil {
+			log.Printf("\n Not able to Change Password for user %s, reason: %v", newUserDN, err)
+		}
+		return err
 
 	} else {
 
-	log.Printf("\nin LDAP Flow")
+		log.Printf("\nin LDAP Flow")
 
-	ls.bindUserDNAgain(l, newUserDN, passwd)
+		ls.bindUserDNAgain(l, newUserDN, passwd)
 
-	req := ldap.NewPasswordModifyRequest(newUserDN, passwd, newPassword)
-	_, err = l.PasswordModify(req)
+		req := ldap.NewPasswordModifyRequest(newUserDN, passwd, newPassword)
+		_, err = l.PasswordModify(req)
 
-	if err != nil {
-		log.Printf("\n Not able to Change Password for user %s, reason: %v", newUserDN, err)
+		if err != nil {
+			log.Printf("\n Not able to Change Password for user %s, reason: %v", newUserDN, err)
+		}
+		return err
+
 	}
-	return err
-
-
-	}
-	
-
 
 }
 
 // // Serch with sAMAccountName to get the UserDN -- Might not needed this
 // func (ls *LDAPClient) SearchtoGetUserDN(name) {
-	
+
 // 	if len(BindDNpass) == 0 {
 // 		return fmt.Errorf("Auth. failed for %s, password cannot be empty", BindDN)
 // 	}
@@ -269,7 +257,6 @@ func (ls *LDAPClient) ModifyPassword(name, passwd, newPassword string) error {
 // 	}
 // 	defer l.Close()
 // 	bindUser(l, BindDN, BindDNpass)
-
 
 // 	searchRequest := NewSearchRequest(
 // 		UserBase, // The base dn to search
@@ -288,7 +275,6 @@ func (ls *LDAPClient) ModifyPassword(name, passwd, newPassword string) error {
 // 		fmt.Printf("%s: %v\n", entry.DN, entry.GetAttributeValue("cn"))
 // 	}
 // }
-
 
 // NewLDAPClient : Creates new LDAPClient capable of binding and changing passwords
 func NewLDAPClient() *LDAPClient {
