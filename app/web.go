@@ -89,7 +89,8 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 
 	err := dec.Decode(&cp)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
+		return
 	}
 	//captchaID := req.Form["captchaId"]
 	//captchaSolution := req.Form["captchaSolution"]
@@ -127,7 +128,8 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 		args := fmt.Sprintf(`-nologo -noprofile Set-ADAccountPassword -Identity %s -OldPassword (ConvertTo-SecureString -AsPlainText "%s" -Force) -NewPassword (ConvertTo-SecureString -AsPlainText "%s" -Force)`, cp.Username, cp.OldPassword, cp.NewPassword)
 		out, err := exec.Command("powershell", strings.Split(args, " ")...).Output()
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
+			return
 		}
 		fmt.Println(string(out))
 		fmt.Println(fmt.Sprintf("Password has been changed successfully for %s", cp.Username))
