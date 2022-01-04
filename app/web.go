@@ -129,6 +129,7 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 		out, err := exec.Command("powershell", strings.Split(args, " ")...).Output()
 		if err != nil {
 			fmt.Println(err)
+			alerts["error"] = alerts["error"] + err.Error()
 			return
 		}
 		fmt.Println(string(out))
