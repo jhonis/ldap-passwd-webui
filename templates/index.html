@@ -33,7 +33,7 @@
         {{ end }}
     </div>
 
-    <form method="post">
+    <form id="form" onsubmit="submitx()">
         <label for="username">Username</label>
         <input id="username" name="username" value="{{.Username}}" type="text" required autofocus>
 
@@ -48,7 +48,7 @@
         <input id="confirm-password" name="confirmPassword" type="password"
                pattern="{{.Pattern}}" x-moz-errormessage="{{.PatternInfo}}" required>
         <p>{{.PatternInfo}}</p>
-        <button type="button" onclick="submitx()">Update password</button>
+        <button type="submit">Update password</button>
     </form>
 
 
