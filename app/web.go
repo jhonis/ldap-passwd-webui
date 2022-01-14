@@ -10,6 +10,7 @@ import (
 
 	"regexp"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"net/http"
 )
@@ -31,11 +32,15 @@ type ChangePasswordRequest struct {
 }
 
 func Serve() {
+	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With"})
+	originsOk := handlers.AllowedOrigins([]string{"*"})
+	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"})
+
 	router := mux.NewRouter()
 	router.HandleFunc("/ldap-passwd-api", ChangePassword).Methods("POST")
 	router.HandleFunc("/ldap-passwd-api/health", HealthCheck).Methods("GET")
 	fmt.Println("Starting server on port 8044")
-	log.Fatal(http.ListenAndServe(":8044", router))
+	log.Fatal(http.ListenAndServe(":8044", handlers.CORS(originsOk, headersOk, methodsOk)(router)))
 }
 
 func HealthCheck(w http.ResponseWriter, r *http.Request) {
