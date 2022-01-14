@@ -75,6 +75,10 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 		alerts.Error = append(alerts.Error, "Confirmation password not specified.")
 	}
 
+	checkInjection(cp.Username, alerts, "username")
+	checkInjection(cp.OldPassword, alerts, "old password")
+	checkInjection(cp.NewPassword, alerts, "new password")
+	checkInjection(cp.ConfirmPassword, alerts, "confirm password")
 	if len(cp.ConfirmPassword) >= 1 && len(cp.NewPassword) >= 1 && strings.Compare(cp.NewPassword, cp.ConfirmPassword) != 0 {
 		alerts.Error = append(alerts.Error, "New and confirmation passwords does not match.")
 	}
@@ -111,5 +115,11 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println(err)
 		return
+	}
+}
+
+func checkInjection(s string, alerts Alert, name string) {
+	if m, _ := regexp.MatchString(`^[a-zA-Z0-9!@#$&*]{1,22}$`, s); !m {
+		alerts.Error = append(alerts.Error, fmt.Sprintf("Wrong format for %s", name))
 	}
 }
