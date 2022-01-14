@@ -1,8 +1,10 @@
 package app
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/thammuio/ldap-passwd-webui/app"
 	"log"
 	"os/exec"
 	"path"
@@ -63,6 +65,18 @@ type ChangePasswordRequest struct {
 	OldPassword     string `json:"oldPassword"`
 	NewPassword     string `json:"newPassword"`
 	ConfirmPassword string `json:"confirmPassword"`
+}
+
+func Serve() {
+	reHandler := new(app.RegexpHandler)
+
+	reHandler.HandleFunc(".*.[js|css|png|eof|svg|ttf|woff]", "GET", app.ServeAssets)
+	reHandler.HandleFunc("/", "GET", app.ServeIndex)
+	reHandler.HandleFunc("/", "POST", app.ChangePassword)
+	http.Handle("/captcha/", captcha.Server(captcha.StdWidth, captcha.StdHeight))
+	http.Handle("/", reHandler)
+	fmt.Println("Starting server on port 8443")
+	http.ListenAndServe(":8443", nil)
 }
 
 // ServeAssets : Serves the static assets
@@ -129,18 +143,28 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(alerts) == 0 {
-		args := fmt.Sprintf(`-nologo -noprofile Set-ADAccountPassword -Identity %s -OldPassword (ConvertTo-SecureString -AsPlainText "%s" -Force) -NewPassword (ConvertTo-SecureString -AsPlainText "%s" -Force)`, cp.Username, cp.OldPassword, cp.NewPassword)
-		out, err := exec.Command("powershell", strings.Split(args, " ")...).Output()
+		args := fmt.Sprintf(`Set-ADAccountPassword -Identity %s -OldPassword (ConvertTo-SecureString -AsPlainText "%s" -Force) -NewPassword (ConvertTo-SecureString -AsPlainText "%s" -Force)`, cp.Username, cp.OldPassword, cp.NewPassword)
+		cmd := exec.Command("powershell", args)
+		var stdout, stderr bytes.Buffer
+		cmd.Stdout = &stdout
+		cmd.Stderr = &stderr
+		err := cmd.Run()
+		fmt.Println(stdout.String())
+		fmt.Println(stderr.String())
 		if err != nil {
 			fmt.Println(err)
-			alerts["error"] = alerts["error"] + err.Error()
-			return
+			regex := regexp.MustCompile(`Set-ADAccountPassword : (.*)\n(?s:.*)`)
+			fmt.Println(regex.ReplaceAllString(stderr.String(), "$1"))
+			fmt.Println(stderr)
+			alerts["error"] = alerts["error"] + regex.ReplaceAllString(stderr.String(), "$1")
+		} else {
+			msg := fmt.Sprintf("Password has been changed successfully for %s", cp.Username)
+			alerts["success"] = msg
+			fmt.Println(msg)
 		}
-		fmt.Println(string(out))
-		fmt.Println(fmt.Sprintf("Password has been changed successfully for %s", cp.Username))
 	}
 
-	p := &pageData{Title: getTitle(), Alerts: alerts, Username: cp.Username, CaptchaId: captcha.New()}
+	p := &pageData{Title: getTitle(), Alerts: alerts, Username: cp.Username, CaptchaId: captcha.New(), Pattern: getPattern(), PatternInfo: getPatternInfo()}
 
 	main, err := template.ParseFiles(path.Join("templates", "main.html"))
 	if err != nil {
