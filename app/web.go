@@ -4,14 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os/exec"
 	"strings"
 
 	"regexp"
 
-	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 	"net/http"
 )
 
@@ -32,15 +31,13 @@ type ChangePasswordRequest struct {
 }
 
 func Serve() {
-	headersOk := handlers.AllowedHeaders([]string{"*"})
-	originsOk := handlers.AllowedOrigins([]string{"*"})
-	methodsOk := handlers.AllowedMethods([]string{"*"})
-
 	router := mux.NewRouter()
-	router.HandleFunc("/ldap-passwd-api/", ChangePassword).Methods("POST", "OPTIONS")
+	router.HandleFunc("/ldap-passwd-api/", ChangePassword).Methods("POST")
 	router.HandleFunc("/ldap-passwd-api/health", HealthCheck).Methods("GET")
 	fmt.Println("Starting server on port 8044")
-	log.Fatal(http.ListenAndServe(":8044", handlers.CORS(originsOk, headersOk, methodsOk)(router)))
+
+	handler := cors.Default().Handler(router)
+	http.ListenAndServe(":8044", handler)
 }
 
 func HealthCheck(w http.ResponseWriter, r *http.Request) {
