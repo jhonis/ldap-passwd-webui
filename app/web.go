@@ -32,9 +32,9 @@ type ChangePasswordRequest struct {
 }
 
 func Serve() {
-	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With"})
+	headersOk := handlers.AllowedHeaders([]string{"*"})
 	originsOk := handlers.AllowedOrigins([]string{"*"})
-	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"})
+	methodsOk := handlers.AllowedMethods([]string{"*"})
 
 	router := mux.NewRouter()
 	router.HandleFunc("/ldap-passwd-api", ChangePassword).Methods("POST")
