@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"ldap-passwd-webui/service"
 	"log"
 	"os"
 	"strings"
@@ -30,7 +31,7 @@ func main() {
 		log.Fatalf("Failed to determine if we are running in service: %v", err)
 	}
 	if inService {
-		runService(svcName, false)
+		service.RunService(svcName, false)
 		return
 	}
 
@@ -41,20 +42,20 @@ func main() {
 	cmd := strings.ToLower(os.Args[1])
 	switch cmd {
 	case "debug":
-		runService(svcName, true)
+		service.RunService(svcName, true)
 		return
 	case "install":
-		err = installService(svcName, "Web interface for Active Directory users to change their passwords")
+		err = service.InstallService(svcName, "Web interface for Active Directory users to change their passwords")
 	case "remove":
-		err = removeService(svcName)
+		err = service.RemoveService(svcName)
 	case "start":
-		err = startService(svcName)
+		err = service.StartService(svcName)
 	case "stop":
-		err = controlService(svcName, svc.Stop, svc.Stopped)
+		err = service.ControlService(svcName, svc.Stop, svc.Stopped)
 	case "pause":
-		err = controlService(svcName, svc.Pause, svc.Paused)
+		err = service.ControlService(svcName, svc.Pause, svc.Paused)
 	case "continue":
-		err = controlService(svcName, svc.Continue, svc.Running)
+		err = service.ControlService(svcName, svc.Continue, svc.Running)
 	default:
 		usage(fmt.Sprintf("Invalid command %s", cmd))
 	}

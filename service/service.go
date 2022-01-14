@@ -58,7 +58,7 @@ loop:
 	return
 }
 
-func runService(name string, isDebug bool) {
+func RunService(name string, isDebug bool) {
 	var err error
 	if isDebug {
 		elog = debug.New(name)

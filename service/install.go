@@ -38,7 +38,7 @@ func exePath() (string, error) {
 	return "", err
 }
 
-func installService(name, desc string) error {
+func InstallService(name, desc string) error {
 	exepath, err := exePath()
 	if err != nil {
 		return err
@@ -66,7 +66,7 @@ func installService(name, desc string) error {
 	return nil
 }
 
-func removeService(name string) error {
+func RemoveService(name string) error {
 	m, err := mgr.Connect()
 	if err != nil {
 		return err
