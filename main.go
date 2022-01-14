@@ -45,7 +45,7 @@ func main() {
 		service.RunService(svcName, true)
 		return
 	case "install":
-		err = service.InstallService(svcName, "Web interface for Active Directory users to change their passwords")
+		err = service.InstallService(svcName, "LDAP Web UI for Password Change", "Web interface for Active Directory users to change their passwords")
 	case "remove":
 		err = service.RemoveService(svcName)
 	case "start":
