@@ -32,9 +32,18 @@ type ChangePasswordRequest struct {
 
 func Serve() {
 	router := mux.NewRouter()
-	router.HandleFunc("/", ChangePassword).Methods("POST")
+	router.HandleFunc("/ldap-passwd-api", ChangePassword).Methods("POST")
+	router.HandleFunc("/ldap-passwd-api/health", HealthCheck).Methods("GET")
 	fmt.Println("Starting server on port 8443")
 	log.Fatal(http.ListenAndServe(":8044", router))
+}
+
+func HealthCheck(w http.ResponseWriter, r *http.Request) {
+	_, err := w.Write([]byte("OK"))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }
 
 // ChangePassword : Serves index page on POST request - executes the change
