@@ -19,8 +19,8 @@ type ChangePasswordResponse struct {
 }
 
 type Alert struct {
-	Success []string `json:"success"`
-	Error   []string `json:"error"`
+	Success []string `json:"success,omitempty"`
+	Error   []string `json:"error,omitempty"`
 }
 
 type ChangePasswordRequest struct {
