@@ -12,8 +12,6 @@ import (
 
 	"html/template"
 
-	"github.com/dchest/captcha"
-
 	"regexp"
 
 	"net/http"
@@ -57,7 +55,6 @@ type pageData struct {
 	PatternInfo string
 	Username    string
 	Alerts      map[string]string
-	CaptchaId   string
 }
 
 type ChangePasswordRequest struct {
@@ -73,7 +70,6 @@ func Serve() {
 	reHandler.HandleFunc(".*.[js|css|png|eof|svg|ttf|woff]", "GET", app.ServeAssets)
 	reHandler.HandleFunc("/", "GET", ServeIndex)
 	reHandler.HandleFunc("/", "POST", ChangePassword)
-	http.Handle("/captcha/", captcha.Server(captcha.StdWidth, captcha.StdHeight))
 	http.Handle("/", reHandler)
 	fmt.Println("Starting server on port 8443")
 	http.ListenAndServe(":8443", nil)
@@ -86,7 +82,7 @@ func ServeAssets(w http.ResponseWriter, req *http.Request) {
 
 // ServeIndex : Serves index page on GET request
 func ServeIndex(w http.ResponseWriter, req *http.Request) {
-	p := &pageData{Title: getTitle(), CaptchaId: captcha.New(), Pattern: getPattern(), PatternInfo: getPatternInfo()}
+	p := &pageData{Title: getTitle(), Pattern: getPattern(), PatternInfo: getPatternInfo()}
 	index, err := template.ParseFiles(path.Join("templates", "index.html"))
 	if err != nil {
 		log.Printf("Error parsing file %v\n", err)
@@ -164,7 +160,7 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	p := &pageData{Title: getTitle(), Alerts: alerts, Username: cp.Username, CaptchaId: captcha.New(), Pattern: getPattern(), PatternInfo: getPatternInfo()}
+	p := &pageData{Title: getTitle(), Alerts: alerts, Username: cp.Username, Pattern: getPattern(), PatternInfo: getPatternInfo()}
 
 	main, err := template.ParseFiles(path.Join("templates", "main.html"))
 	if err != nil {

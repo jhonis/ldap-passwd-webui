@@ -3,7 +3,6 @@ module ldap-passwd-webui
 go 1.17
 
 require (
-	github.com/dchest/captcha v0.0.0-20200903113550-03f5f0333e1f
 	github.com/thammuio/ldap-passwd-webui v0.0.0-20181024162538-05282423d3c3
 	golang.org/x/sys v0.0.0-20220111092808-5a964db01320
 )
