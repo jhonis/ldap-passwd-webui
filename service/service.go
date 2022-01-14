@@ -29,7 +29,7 @@ loop:
 	for {
 		select {
 		case <-tick:
-			app.Serve()
+			go app.Serve()
 		case c := <-r:
 			switch c.Cmd {
 			case svc.Interrogate:
