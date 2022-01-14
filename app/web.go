@@ -71,8 +71,8 @@ func Serve() {
 	reHandler := new(app.RegexpHandler)
 
 	reHandler.HandleFunc(".*.[js|css|png|eof|svg|ttf|woff]", "GET", app.ServeAssets)
-	reHandler.HandleFunc("/", "GET", app.ServeIndex)
-	reHandler.HandleFunc("/", "POST", app.ChangePassword)
+	reHandler.HandleFunc("/", "GET", ServeIndex)
+	reHandler.HandleFunc("/", "POST", ChangePassword)
 	http.Handle("/captcha/", captcha.Server(captcha.StdWidth, captcha.StdHeight))
 	http.Handle("/", reHandler)
 	fmt.Println("Starting server on port 8443")
