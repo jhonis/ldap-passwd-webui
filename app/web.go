@@ -37,7 +37,7 @@ func Serve() {
 	methodsOk := handlers.AllowedMethods([]string{"*"})
 
 	router := mux.NewRouter()
-	router.HandleFunc("/ldap-passwd-api/", ChangePassword).Methods("POST")
+	router.HandleFunc("/ldap-passwd-api/", ChangePassword).Methods("POST", "OPTIONS")
 	router.HandleFunc("/ldap-passwd-api/health", HealthCheck).Methods("GET")
 	fmt.Println("Starting server on port 8044")
 	log.Fatal(http.ListenAndServe(":8044", handlers.CORS(originsOk, headersOk, methodsOk)(router)))
