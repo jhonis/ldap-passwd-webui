@@ -4,57 +4,23 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/thammuio/ldap-passwd-webui/app"
 	"log"
 	"os/exec"
-	"path"
 	"strings"
-
-	"html/template"
 
 	"regexp"
 
+	"github.com/gorilla/mux"
 	"net/http"
 )
 
-type route struct {
-	pattern *regexp.Regexp
-	verb    string
-	handler http.Handler
+type ChangePasswordResponse struct {
+	Alerts Alert `json:"alerts"`
 }
 
-// RegexpHandler is used for http handler to bind using regular expressions
-type RegexpHandler struct {
-	routes []*route
-}
-
-// Handler binds http handler on RegexpHandler
-func (h *RegexpHandler) Handler(pattern *regexp.Regexp, verb string, handler http.Handler) {
-	h.routes = append(h.routes, &route{pattern, verb, handler})
-}
-
-// HandleFunc binds http handler function on RegexpHandler
-func (h *RegexpHandler) HandleFunc(r string, v string, handler func(http.ResponseWriter, *http.Request)) {
-	re := regexp.MustCompile(r)
-	h.routes = append(h.routes, &route{re, v, http.HandlerFunc(handler)})
-}
-
-func (h *RegexpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	for _, route := range h.routes {
-		if route.pattern.MatchString(r.URL.Path) && route.verb == r.Method {
-			route.handler.ServeHTTP(w, r)
-			return
-		}
-	}
-	http.NotFound(w, r)
-}
-
-type pageData struct {
-	Title       string
-	Pattern     string
-	PatternInfo string
-	Username    string
-	Alerts      map[string]string
+type Alert struct {
+	Success []string `json:"success"`
+	Error   []string `json:"error"`
 }
 
 type ChangePasswordRequest struct {
@@ -65,42 +31,10 @@ type ChangePasswordRequest struct {
 }
 
 func Serve() {
-	reHandler := new(app.RegexpHandler)
-
-	reHandler.HandleFunc(".*.[js|css|png|eof|svg|ttf|woff]", "GET", app.ServeAssets)
-	reHandler.HandleFunc("/", "GET", ServeIndex)
-	reHandler.HandleFunc("/", "POST", ChangePassword)
-	http.Handle("/", reHandler)
+	router := mux.NewRouter()
+	router.HandleFunc("/", ChangePassword).Methods("POST")
 	fmt.Println("Starting server on port 8443")
-	http.ListenAndServe(":8443", nil)
-}
-
-// ServeAssets : Serves the static assets
-func ServeAssets(w http.ResponseWriter, req *http.Request) {
-	http.ServeFile(w, req, path.Join("static", req.URL.Path[1:]))
-}
-
-// ServeIndex : Serves index page on GET request
-func ServeIndex(w http.ResponseWriter, req *http.Request) {
-	p := &pageData{Title: getTitle(), Pattern: getPattern(), PatternInfo: getPatternInfo()}
-	index, err := template.ParseFiles(path.Join("templates", "index.html"))
-	if err != nil {
-		log.Printf("Error parsing file %v\n", err)
-	} else {
-		index.Execute(w, p)
-	}
-	main, err := template.ParseFiles(path.Join("templates", "main.html"))
-	if err != nil {
-		log.Printf("Error parsing file %v\n", err)
-	} else {
-		main.Execute(w, p)
-	}
-	afterMain, err := template.ParseFiles(path.Join("templates", "after-main.html"))
-	if err != nil {
-		log.Printf("Error parsing file %v\n", err)
-	} else {
-		afterMain.Execute(w, p)
-	}
+	log.Fatal(http.ListenAndServe(":8044", router))
 }
 
 // ChangePassword : Serves index page on POST request - executes the change
@@ -115,30 +49,30 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	alerts := map[string]string{}
+	alerts := Alert{}
 
 	if cp.Username == "" {
-		alerts["error"] = "Username not specified."
+		alerts.Error = append(alerts.Error, "Username not specified.")
 	}
 	if cp.OldPassword == "" {
-		alerts["error"] = alerts["error"] + "Old password not specified."
+		alerts.Error = append(alerts.Error, "Old password not specified.")
 	}
 	if cp.NewPassword == "" {
-		alerts["error"] = alerts["error"] + "New password not specified."
+		alerts.Error = append(alerts.Error, "New password not specified.")
 	}
 	if cp.ConfirmPassword == "" {
-		alerts["error"] = alerts["error"] + "Confirmation password not specified."
+		alerts.Error = append(alerts.Error, "Confirmation password not specified.")
 	}
 
 	if len(cp.ConfirmPassword) >= 1 && len(cp.NewPassword) >= 1 && strings.Compare(cp.NewPassword, cp.ConfirmPassword) != 0 {
-		alerts["error"] = alerts["error"] + "New and confirmation passwords does not match."
+		alerts.Error = append(alerts.Error, "New and confirmation passwords does not match.")
 	}
 
 	if m, _ := regexp.MatchString(getPattern(), cp.NewPassword); !m {
-		alerts["error"] = alerts["error"] + fmt.Sprintf("%s", getPatternInfo())
+		alerts.Error = append(alerts.Error, fmt.Sprintf("%s", getPatternInfo()))
 	}
 
-	if len(alerts) == 0 {
+	if len(alerts.Error) == 0 {
 		args := fmt.Sprintf(`Set-ADAccountPassword -Identity %s -OldPassword (ConvertTo-SecureString -AsPlainText "%s" -Force) -NewPassword (ConvertTo-SecureString -AsPlainText "%s" -Force)`, cp.Username, cp.OldPassword, cp.NewPassword)
 		cmd := exec.Command("powershell", args)
 		var stdout, stderr bytes.Buffer
@@ -152,20 +86,19 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 			regex := regexp.MustCompile(`Set-ADAccountPassword : (.*)\n(?s:.*)`)
 			fmt.Println(regex.ReplaceAllString(stderr.String(), "$1"))
 			fmt.Println(stderr)
-			alerts["error"] = alerts["error"] + regex.ReplaceAllString(stderr.String(), "$1")
+			alerts.Error = append(alerts.Error, regex.ReplaceAllString(stderr.String(), "$1"))
 		} else {
 			msg := fmt.Sprintf("Password has been changed successfully for %s", cp.Username)
-			alerts["success"] = msg
+			alerts.Success = append(alerts.Success, msg)
 			fmt.Println(msg)
 		}
 	}
+	p := &ChangePasswordResponse{Alerts: alerts}
 
-	p := &pageData{Title: getTitle(), Alerts: alerts, Username: cp.Username, Pattern: getPattern(), PatternInfo: getPatternInfo()}
-
-	main, err := template.ParseFiles(path.Join("templates", "main.html"))
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(p)
 	if err != nil {
-		log.Printf("Error parsing file %v\n", err)
-	} else {
-		main.Execute(w, p)
+		fmt.Println(err)
+		return
 	}
 }
