@@ -81,8 +81,20 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 		alerts.Error = append(alerts.Error, "New and confirmation passwords does not match.")
 	}
 
-	if m, _ := regexp.MatchString(getPattern(), cp.NewPassword); !m {
+	upperCase := regexp.MustCompile(`[A-Z]`)
+	lowerCase := regexp.MustCompile(`[a-z]`)
+	digit := regexp.MustCompile(`[0-9]`)
+	specialChars := regexp.MustCompile(`[!@#$&*]`)
+	if !upperCase.MatchString(cp.NewPassword) ||
+		!lowerCase.MatchString(cp.NewPassword) ||
+		!digit.MatchString(cp.NewPassword) ||
+		!specialChars.MatchString(cp.NewPassword) ||
+		len(cp.NewPassword) <= 12 {
 		alerts.Error = append(alerts.Error, fmt.Sprintf("%s", getPatternInfo()))
+	}
+	regex := regexp.MustCompile(`[^A-Za-z0-9!@#$&*]`)
+	if regex.MatchString(cp.NewPassword) {
+		alerts.Error = append(alerts.Error, "You can't use special characters other than \"!@#$&*\"")
 	}
 
 	if len(alerts.Error) == 0 {
