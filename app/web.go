@@ -10,7 +10,6 @@ import (
 	"regexp"
 
 	"github.com/gorilla/mux"
-	"github.com/rs/cors"
 	"net/http"
 )
 
@@ -36,8 +35,7 @@ func Serve() {
 	router.HandleFunc("/ldap-passwd-api/health", HealthCheck).Methods("GET")
 	fmt.Println("Starting server on port 8044")
 
-	handler := cors.Default().Handler(router)
-	http.ListenAndServe(":8044", handler)
+	http.ListenAndServe(":8044", router)
 }
 
 func HealthCheck(w http.ResponseWriter, r *http.Request) {
